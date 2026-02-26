@@ -104,8 +104,15 @@ public class EventController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
 
         try {
+
+            if (start == null || end == null) {
+                return ResponseEntity.badRequest().build();
+            }
+
             List<Event> events = eventService.getEventsByDateRange(start, end);
+
             return ResponseEntity.ok(events);
+
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
