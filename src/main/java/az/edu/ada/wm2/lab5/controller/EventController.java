@@ -98,7 +98,7 @@ public class EventController {
         }
     }
 
-    // 7. FILTER BY DATE RANGE - GET /api/events/filter/date
+
     @GetMapping("/filter/date")
     public ResponseEntity<List<Event>> getEventsByDateRange(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
@@ -111,7 +111,6 @@ public class EventController {
         }
     }
 
-    // 8. FILTER BY PRICE RANGE - GET /api/events/filter/price
     @GetMapping("/filter/price")
     public ResponseEntity<List<Event>> getEventsByPriceRange(
             @RequestParam BigDecimal min,
@@ -124,7 +123,7 @@ public class EventController {
         }
     }
 
-    // 9. FILTER BY TAG - GET /api/events/filter/tag
+
     @GetMapping("/filter/tag")
     public ResponseEntity<List<Event>> getEventsByTag(@RequestParam String tag) {
         try {
@@ -135,7 +134,7 @@ public class EventController {
         }
     }
 
-    // 10. GET UPCOMING EVENTS - GET /api/events/upcoming
+
     @GetMapping("/upcoming")
     public ResponseEntity<List<Event>> getUpcomingEvents() {
         try {
@@ -146,7 +145,7 @@ public class EventController {
         }
     }
 
-    // 11. UPDATE EVENT PRICE - PATCH /api/events/{id}/price
+
     @PatchMapping("/{id}/price")
     public ResponseEntity<Event> updateEventPrice(
             @PathVariable UUID id,
