@@ -98,75 +98,66 @@ public class EventController {
         }
     }
 
+    // 7. FILTER BY DATE RANGE - GET /api/events/filter/date
     @GetMapping("/filter/date")
     public ResponseEntity<List<Event>> getEventsByDateRange(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
-
         try {
-
-            if (start == null || end == null) {
-                return ResponseEntity.badRequest().build();
-            }
-
             List<Event> events = eventService.getEventsByDateRange(start, end);
-
-            return ResponseEntity.ok(events);
-
+            return new ResponseEntity<>(events, HttpStatus.OK);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
 
+    // 8. FILTER BY PRICE RANGE - GET /api/events/filter/price
     @GetMapping("/filter/price")
     public ResponseEntity<List<Event>> getEventsByPriceRange(
             @RequestParam BigDecimal min,
             @RequestParam BigDecimal max) {
-
         try {
             List<Event> events = eventService.getEventsByPriceRange(min, max);
-            return ResponseEntity.ok(events);
+            return new ResponseEntity<>(events, HttpStatus.OK);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
-    @GetMapping("/filter/tag")
-    public ResponseEntity<List<Event>> getEventsByTag(
-            @RequestParam String tag) {
 
+    // 9. FILTER BY TAG - GET /api/events/filter/tag
+    @GetMapping("/filter/tag")
+    public ResponseEntity<List<Event>> getEventsByTag(@RequestParam String tag) {
         try {
             List<Event> events = eventService.getEventsByTag(tag);
-            return ResponseEntity.ok(events);
+            return new ResponseEntity<>(events, HttpStatus.OK);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
+    // 10. GET UPCOMING EVENTS - GET /api/events/upcoming
     @GetMapping("/upcoming")
     public ResponseEntity<List<Event>> getUpcomingEvents() {
-
         try {
             List<Event> events = eventService.getUpcomingEvents();
-            return ResponseEntity.ok(events);
+            return new ResponseEntity<>(events, HttpStatus.OK);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
+    // 11. UPDATE EVENT PRICE - PATCH /api/events/{id}/price
     @PatchMapping("/{id}/price")
     public ResponseEntity<Event> updateEventPrice(
             @PathVariable UUID id,
             @RequestParam BigDecimal price) {
-
         try {
-            Event updated = eventService.updateEventPrice(id, price);
-            return ResponseEntity.ok(updated);
-
+            Event updatedEvent = eventService.updateEventPrice(id, price);
+            return new ResponseEntity<>(updatedEvent, HttpStatus.OK);
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
-
 }
