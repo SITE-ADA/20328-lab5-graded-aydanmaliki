@@ -1,111 +1,163 @@
-package az.edu.ada.wm2.lab5.service;
+package az.edu.ada.wm2.lab5.controller;
 
 import az.edu.ada.wm2.lab5.model.Event;
-import az.edu.ada.wm2.lab5.repository.EventRepository;
+import az.edu.ada.wm2.lab5.service.EventService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
-@Service
-public class EventServiceImpl implements EventService {
+@RestController
+@RequestMapping("/api/events")
+public class EventController {
 
-    private final EventRepository eventRepository;
+    private final EventService eventService;
 
     @Autowired
-    public EventServiceImpl(EventRepository eventRepository) {
-        this.eventRepository = eventRepository;
+    public EventController(EventService eventService) {
+        this.eventService = eventService;
     }
 
-    @Override
-    public Event createEvent(Event event) {
-        if (event.getId() == null) {
-            event.setId(UUID.randomUUID());
+    // CREATE - POST /api/events
+    @PostMapping
+    public ResponseEntity<Event> createEvent(@RequestBody Event event) {
+        try {
+            Event createdEvent = eventService.createEvent(event);
+            return new ResponseEntity<>(createdEvent, HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-        return eventRepository.save(event);
     }
 
-    @Override
-    public Event getEventById(UUID id) {
-        return eventRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Event not found with id: " + id));
-    }
 
-    @Override
-    public List<Event> getAllEvents() {
-        return eventRepository.findAll();
-    }
-
-    @Override
-    public Event updateEvent(UUID id, Event event) {
-        if (!eventRepository.existsById(id)) {
-            throw new RuntimeException("Event not found with id: " + id);
+    @GetMapping
+    public ResponseEntity<List<Event>> getAllEvents() {
+        try {
+            List<Event> events = eventService.getAllEvents();
+            return new ResponseEntity<>(events, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        event.setId(id);
-        return eventRepository.save(event);
     }
 
-    @Override
-    public void deleteEvent(UUID id) {
-        if (!eventRepository.existsById(id)) {
-            throw new RuntimeException("Event not found with id: " + id);
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Event> getEventById(@PathVariable UUID id) {
+        try {
+            Event event = eventService.getEventById(id);
+            return new ResponseEntity<>(event, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        eventRepository.deleteById(id);
     }
 
-    @Override
-    public Event partialUpdateEvent(UUID id, Event partialEvent) {
-        Event existingEvent = eventRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Event not found with id: " + id));
-
-        // Update only non-null fields
-        if (partialEvent.getEventName() != null) {
-            existingEvent.setEventName(partialEvent.getEventName());
+    // DELETE BY ID - DELETE /api/events/{id}
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteEvent(@PathVariable UUID id) {
+        try {
+            eventService.deleteEvent(id);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        if (partialEvent.getTags() != null && !partialEvent.getTags().isEmpty()) {
-            existingEvent.setTags(partialEvent.getTags());
+    }
+
+    // FULL UPDATE (PUT) - PUT /api/events/{id}
+    @PutMapping("/{id}")
+    public ResponseEntity<Event> updateEvent(@PathVariable UUID id, @RequestBody Event event) {
+        try {
+            Event updatedEvent = eventService.updateEvent(id, event);
+            return new ResponseEntity<>(updatedEvent, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-        if (partialEvent.getTicketPrice() != null) {
-            existingEvent.setTicketPrice(partialEvent.getTicketPrice());
+    }
+
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<Event> partialUpdateEvent(@PathVariable UUID id, @RequestBody Event partialEvent) {
+        try {
+            Event updatedEvent = eventService.partialUpdateEvent(id, partialEvent);
+            return new ResponseEntity<>(updatedEvent, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-        if (partialEvent.getEventDateTime() != null) {
-            existingEvent.setEventDateTime(partialEvent.getEventDateTime());
+    }
+
+
+    @GetMapping("/filter/date")
+    public ResponseEntity<List<Event>> getEventsByDateRange(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
+        try {
+            List<Event> events = eventService.getEventsByDateRange(start, end);
+            return new ResponseEntity<>(events, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-        if (partialEvent.getDurationMinutes() > 0) {
-            existingEvent.setDurationMinutes(partialEvent.getDurationMinutes());
+    }
+
+
+    @GetMapping("/filter/price")
+    public ResponseEntity<List<Event>> getEventsByPriceRange(
+            @RequestParam BigDecimal min,
+            @RequestParam BigDecimal max) {
+        try {
+            List<Event> events = eventService.getEventsByPriceRange(min, max);
+            return new ResponseEntity<>(events, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-
-        return eventRepository.save(existingEvent);
     }
 
-    // Custom methods
-    @Override
-    public List<Event> getEventsByTag(String tag) {
-        return List.of();
+
+    @GetMapping("/filter/tag")
+    public ResponseEntity<List<Event>> getEventsByTag(@RequestParam String tag) {
+        try {
+            List<Event> events = eventService.getEventsByTag(tag);
+            return new ResponseEntity<>(events, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
-    @Override
-    public List<Event> getUpcomingEvents() {
-        return List.of();
+
+    @GetMapping("/upcoming")
+    public ResponseEntity<List<Event>> getUpcomingEvents() {
+        try {
+            List<Event> events = eventService.getUpcomingEvents();
+            return new ResponseEntity<>(events, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
-    @Override
-    public List<Event> getEventsByPriceRange(BigDecimal minPrice, BigDecimal maxPrice) {
-       return List.of();
-    }
 
-    @Override
-    public List<Event> getEventsByDateRange(LocalDateTime start, LocalDateTime end) {
-        return List.of();
+    @PatchMapping("/{id}/price")
+    public ResponseEntity<Event> updateEventPrice(
+            @PathVariable UUID id,
+            @RequestParam BigDecimal price) {
+        try {
+            Event updatedEvent = eventService.updateEventPrice(id, price);
+            return new ResponseEntity<>(updatedEvent, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
     }
-
-    @Override
-    public Event updateEventPrice(UUID id, BigDecimal newPrice) {
-        return null;
-    }
-
 }
