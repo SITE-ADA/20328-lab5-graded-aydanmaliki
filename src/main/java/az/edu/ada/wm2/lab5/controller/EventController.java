@@ -98,4 +98,16 @@ public class EventController {
         }
     }
 
+    @GetMapping("/filter/date")
+    public ResponseEntity<List<Event>> getEventsByDateRange(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
+
+        try {
+            List<Event> events = eventService.getEventsByDateRange(start, end);
+            return ResponseEntity.ok(events);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
 }
